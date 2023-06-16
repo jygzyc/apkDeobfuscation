@@ -1,0 +1,11 @@
+{
+    "remote_device": "192.168.2.108:6666",
+    "spawn": false,
+    "package_name": "com.fg",
+    "app_name": "FG Keep Alive",
+    "frida_script_name": "hook.js",
+    "methods_map": {
+        "kotlinx.android.extensionss.qz.b(Ljava/lang/String;)Ljava/lang/String;": "_handle_qz_b",
+        "kotlinx.android.extensionss.cg.b(Ljava/lang/String;)Ljava/lang/String;": "_handle_cg_b"
+    }
+}

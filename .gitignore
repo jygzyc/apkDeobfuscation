@@ -1,0 +1,10 @@
+# exclude folders
+log/
+**/log/
+**/__pycache__/
+demo/
+
+# exclude files
+**/listener.py
+**/*.zip
+**/example.jadx.kts
