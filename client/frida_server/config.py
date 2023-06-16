@@ -2,7 +2,7 @@ import json
 import os
 
 class Config:
-    def __init__(self, remote_device, spawn, package_name, app_name, frida_script_name, methods_map, jadx_script_name):
+    def __init__(self, remote_device, spawn, package_name, app_name, frida_script_name, methods_map):
         self.remote_device = remote_device
         self.spawn = spawn
         self.package_name = package_name
