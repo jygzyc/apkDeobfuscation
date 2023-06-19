@@ -41,7 +41,6 @@ class Logger:
             self.logger.critical(message)
 
     def log(self, level, message):
-        message = message.encode('unicode_escape').decode('utf-8')
         if isinstance(level, str):
             level = level.upper()
         if level == 'DEBUG':
