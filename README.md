@@ -13,6 +13,12 @@
 
 ## Development
 
+### Dependency resolution.
+
+<font color="red">Attention!!</font>
+
+**Currently, the `jadx` script has dependency bugs. When developing scripts, you can develop them as usual, and then add file dependencies to `depend_config.json`. To download the corresponding dependencies, you need to run `envsetup.py`. The script will check the files for dependencies listed in config, and replace them with the absolute path of the library if there is a match.**
+
 ### First case: local decryption.
 
 > [replace_method_call.jadx.kts](https://github.com/skylot/jadx/blob/1a642108ef7fe0322f343187a9c21f7b3658aafb/jadx-plugins/jadx-script/examples/scripts/replace_method_call.jadx.kts)
@@ -90,9 +96,7 @@ fun decode(str: String): String {
  */
 
 // That is the path relative to the jadx/bin execution directory, or it can be changed to an absolute path.
-@file:DependsOn("../external_library/okhttp-4.11.0.jar")
-@file:DependsOn("../external_library/okio-jvm-3.2.0.jar")
-@file:DependsOn("../external_library/okio-3.2.0.jar")
+@file:DependsOn("com.squareup.okhttp3:okhttp:4.11.0")
 
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient

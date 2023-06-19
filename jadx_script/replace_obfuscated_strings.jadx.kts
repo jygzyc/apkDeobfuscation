@@ -5,9 +5,14 @@
  */
 
 // That is the path relative to the jadx/bin execution directory, or it can be changed to an absolute path.
-@file:DependsOn("../external_library/okhttp-4.11.0.jar")
-@file:DependsOn("../external_library/okio-jvm-3.2.0.jar")
-@file:DependsOn("../external_library/okio-3.2.0.jar")
+@file:DependsOn("D:/project/AndroidDecompile/apkDeobfuscation/jadx/external/com.squareup.okhttp3/okhttp-4.11.0.jar")
+@file:DependsOn("D:/project/AndroidDecompile/apkDeobfuscation/jadx/external/com.squareup.okhttp3/okio-3.2.0.jar")
+@file:DependsOn("D:/project/AndroidDecompile/apkDeobfuscation/jadx/external/com.squareup.okhttp3/okio-jvm-3.2.0.jar")
+
+
+// @file:DependsOn("../external_library/okhttp-4.11.0.jar")
+// @file:DependsOn("../external_library/okio-jvm-3.2.0.jar")
+// @file:DependsOn("../external_library/okio-3.2.0.jar")
 
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient

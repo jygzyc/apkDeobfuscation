@@ -3,6 +3,7 @@ log/
 **/log/
 **/__pycache__/
 demo/
+**/external/*
 
 # exclude files
 **/listener.py

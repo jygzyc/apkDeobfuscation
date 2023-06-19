@@ -31,21 +31,22 @@ def decrypt_class():
     return response
 
 def _process_string(s: str) -> str:
-    # 将连续的换行替换为单个空格
+    '''
+    Remove consecutive line breaks and spaces from a string, 
+    while keeping leading and trailing spaces.
+    '''
     s = ' '.join(s.split())
-    
-    # 去除字符串中连续的空格
     s = re.sub(r'\s+', ' ', s)
-    
-    # 检测字符串首部和尾部空格
     if len(s) > 0 and s[0] == ' ':
         s = ' ' + s.lstrip()
     if len(s) > 0 and s[-1] == ' ':
         s = s.rstrip() + ' '
-    
     return s
 
 def handle_params(params):
+    '''
+    Allow custom parameter processing functions.
+    '''
     return params
 
 #################### Method Handler ####################
