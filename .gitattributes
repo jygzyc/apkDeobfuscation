@@ -1,2 +1,0 @@
-jadx-dev-all.jar filter=lfs diff=lfs merge=lfs -text
-jadx/lib/jadx-dev-all.jar !text !filter !merge !diff

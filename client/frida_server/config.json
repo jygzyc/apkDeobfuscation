@@ -1,5 +1,5 @@
 {
-    "remote_device": "192.168.2.108:6666",
+    "remote_device": "<Device IP>:<Port>",
     "spawn": false,
     "package_name": "com.fg",
     "app_name": "FG Keep Alive",

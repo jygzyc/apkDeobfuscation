@@ -2,10 +2,33 @@
 log/
 **/log/
 **/__pycache__/
-demo/
 **/external/*
 
 # exclude files
 **/listener.py
 **/*.zip
 **/example.jadx.kts
+
+# vscode
+.vscode/
+*.code-workspace
+
+# python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+*.egg-info/
+*.eggs/
+*.whl
+*.coverage
+*.mypy_cache/
+*.pytest_cache/
+*.tox/
+*.dist-info/
+*.venv/
+*.env
+*.virtualenv/
+*.ipynb_checkpoints
+*.lock

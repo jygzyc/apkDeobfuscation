@@ -1,163 +1,48 @@
-# apkDeobfuscation
+# APK Deobfuscation Toolkit
 
-## Preparation
+This project provides a framework for deobfuscating Android applications by combining static analysis with dynamic instrumentation. It uses Jadx for decompilation and script-based modification, communicating with a backend server (Frida or Unidbg) that performs live decryption by hooking into the running application.
 
-- JDK environment at least version 1.8 (Recommend JDK version 17)
-- python3
+## Core Principle
+
+The deobfuscation process follows a client-server model:
+
+1. **Server (Dynamic Analysis)**: A Python server using Frida (for Java/Kotlin code) or Unidbg (for native code) runs on a host machine. It hooks into the target application on a device or emulator to gain access to its internal decryption functions.
+
+2. **Client (Static Analysis)**: A Jadx script (`.jadx.kts`) is loaded into the `jadx-gui`. This script traverses the decompiled code, identifies calls to obfuscated methods (e.g., encrypted string lookups), and sends the encrypted data to the server.
+
+3. **Patching**: The server executes the real decryption function from the app and returns the plaintext result to the Jadx script, which then replaces the original method call with the decrypted value in the decompiled code.
+
+## Prerequisites
+
+- JDK (Version 11 or newer recommended)
+- Python 3
+- A rooted Android device or emulator with `frida-server` running (for the Frida-based approach).
 
 ## Usage
 
-1. use `jadx/jadx-gui` to load the target file, such as `.apk` or `.dex`
-2. use `frida` or `unidbg` to run the decryption server
-3. load the jadx-script and decrypt
+1. **Start the Decryption Server**:
+    - Navigate to the server directory, e.g., `client/frida_server/`.
+    - Run the server: `python main.py`. The server will wait for requests from Jadx.
 
-## Development
+2. **Analyze in Jadx**:
+    - Open `jadx-gui` and load the target `.apk` or `.dex` file.
 
-### Dependency resolution.
+3. **Apply Deobfuscation Script**:
+    - In `jadx-gui`, go to the `Script` menu and select `Run script...`.
+    - Choose the appropriate `.jadx.kts` script from one of the `projects/` subdirectories (e.g., `projects/demo2_deeper_replace/replace_obfuscated_strings.jadx.kts`).
+    - The script will execute, communicate with the running server, and patch the code in the Jadx UI. View the log output in the `Log` panel at the bottom.
 
-<font color="red">Attention!!</font>
+## Project Examples
 
-**Currently, the `jadx` script has dependency bugs. When developing scripts, you can develop them as usual, and then add file dependencies to `depend_config.json`. To download the corresponding dependencies, you need to run `envsetup.py`. The script will check the files for dependencies listed in config, and replace them with the absolute path of the library if there is a match.**
+- **`demo1_sample_replace`**: A basic example of replacing a simple method call.
 
-### First case: local decryption.
+- **`demo2_deeper_replace`**: Demonstrates deobfuscating encrypted strings by calling a live decryption method.
 
-> [replace_method_call.jadx.kts](https://github.com/skylot/jadx/blob/1a642108ef7fe0322f343187a9c21f7b3658aafb/jadx-plugins/jadx-script/examples/scripts/replace_method_call.jadx.kts)
+- **`demo3_anti_stringfog`**: A specific example for handling strings obfuscated with a simple XOR operation.
 
-```kotlin
-/**
- * Replace method call with calculated result.
- * Useful for custom string deobfuscation.
- *
- * Example for sample from issue https://github.com/skylot/jadx/issues/1251
- */
+![demo3_origin](./assets/demo3_origin.png)
 
-import jadx.core.dex.instructions.ConstStringNode
-import jadx.core.dex.instructions.InvokeNode
-import jadx.core.dex.instructions.args.InsnArg
-import jadx.core.dex.instructions.args.InsnWrapArg
-import jadx.core.dex.instructions.args.RegisterArg
-
-val jadx = getJadxInstance()
-
-val mthSignature = "com.xshield.aa.iIiIiiiiII(Ljava/lang/String;)Ljava/lang/String;"
-
-jadx.replace.insns { mth, insn ->
-	if (insn is InvokeNode && insn.callMth.rawFullId == mthSignature) {
-		val str = getConstStr(insn.getArg(0))
-		if (str != null) {
-			val resultStr = decode(str)
-			log.info { "Decode '$str' to '$resultStr' in $mth" }
-			return@insns ConstStringNode(resultStr)
-		}
-	}
-	null
-}
-
-fun getConstStr(arg: InsnArg): String? {
-	val insn = when (arg) {
-		is InsnWrapArg -> arg.wrapInsn
-		is RegisterArg -> arg.assignInsn
-		else -> null
-	}
-	if (insn is ConstStringNode) {
-		return insn.string
-	}
-	return null
-}
-
-/**
- * Decompiled method, automatically converted to Kotlin by IntelliJ Idea
- */
-fun decode(str: String): String {
-	val length = str.length
-	val cArr = CharArray(length)
-	var i = length - 1
-	while (i >= 0) {
-		val i2 = i - 1
-		cArr[i] = (str[i].code xor 'z'.code).toChar()
-		if (i2 < 0) {
-			break
-		}
-		i = i2 - 1
-		cArr[i2] = (str[i2].code xor '\u000c'.code).toChar()
-	}
-	return String(cArr)
-}
-
-```
-
-### Second case: remote decryption.
-
-```kotlin
-/**
- * Replace method call with requested result.
- * Useful for custom string deobfuscation.
- *
- */
-
-// That is the path relative to the jadx/bin execution directory, or it can be changed to an absolute path.
-@file:DependsOn("com.squareup.okhttp3:okhttp:4.11.0")
-
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.Response
-
-import jadx.core.dex.instructions.ConstStringNode
-import jadx.core.dex.instructions.InvokeNode
-import jadx.core.dex.instructions.args.InsnArg
-import jadx.core.dex.instructions.args.InsnWrapArg
-import jadx.core.dex.instructions.args.RegisterArg
-
-val jadx = getJadxInstance()
-
-val mthSignature = "kotlinx.android.extensionss.qz.b(Ljava/lang/String;)Ljava/lang/String;"
-
-jadx.replace.insns { mth, insn ->
-	if (insn is InvokeNode && insn.callMth.rawFullId == mthSignature) {
-		val str = getConstStr(insn.getArg(0))
-		if (str != null) {
-			val resultStr = decrypt(mthSignature, str)
-			log.info { "Decrypt '$str' to '$resultStr' in $mth" }
-			return@insns ConstStringNode(resultStr)
-		}
-	}
-	null
-}
-
-fun getConstStr(arg: InsnArg): String? {
-	val insn = when (arg) {
-		is InsnWrapArg -> arg.wrapInsn
-		is RegisterArg -> arg.assignInsn
-		else -> null
-	}
-	if (insn is ConstStringNode) {
-		return insn.string
-	}
-	return null
-}
-
-fun decrypt(mthSignature: String, param: String): String?{
-	val client = OkHttpClient()
-    val json = """
-        {
-            "method": "${mthSignature}",
-			"param": "${param}"
-        }
-    """.trimIndent()
-
-	val requestBody = json.toRequestBody("application/json; charset=utf-8".toMediaType())
-
-	val request = Request.Builder()
-        .url("http://127.0.0.1:5000/decrypt")
-        .post(requestBody)
-        .build()
-
-    val response = client.newCall(request).execute()
-	return response.body?.string().toString()
-}
-```
+![demo3_after](./assets/demo3_after.png)
 
 ## Thanks
 
