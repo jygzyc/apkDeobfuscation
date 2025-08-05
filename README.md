@@ -22,7 +22,7 @@ The deobfuscation process follows a client-server model:
 
 1. **Start the Decryption Server**:
     - Navigate to the server directory, e.g., `client/frida_server/`.
-    - Run the server: `python main.py`. The server will wait for requests from Jadx.
+    - Run the server: `python -m run.py`. The server will wait for requests from Jadx.
 
 2. **Analyze in Jadx**:
     - Open `jadx-gui` and load the target `.apk` or `.dex` file.
@@ -38,7 +38,7 @@ The deobfuscation process follows a client-server model:
 
 - **`demo2_deeper_replace`**: Demonstrates deobfuscating encrypted strings by calling a live decryption method.
 
-- **`demo3_anti_stringfog`**: A specific example for handling strings obfuscated with a simple XOR operation.
+- **`demo3_anti_stringfog`**: A specific example for handling strings obfuscated with a simple XOR operation, including support for both string and integer return types.
 
 ![demo3_origin](./assets/demo3_origin.png)
 
