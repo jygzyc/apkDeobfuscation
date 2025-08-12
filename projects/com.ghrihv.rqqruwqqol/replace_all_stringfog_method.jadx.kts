@@ -1,68 +1,42 @@
 /**
- * Replace all stringfog method call with calculated result.
- * Useful for custom string deobfuscation.
- *
- * Bug: This script only completely works when loading the application in first time.
- * If you have already loaded the application, you need to restart jadx-gui. 
+ * Replaces method calls with decrypted StringFog strings.
+ * Credits to @skylot at https://github.com/skylot/jadx/discussions/2564
+ * Author: Yves
  */
 
-import jadx.core.dex.info.FieldInfo
 import jadx.core.dex.instructions.ConstStringNode
 import jadx.core.dex.instructions.FillArrayInsn
 import jadx.core.dex.instructions.FilledNewArrayNode
-import jadx.core.dex.instructions.IndexInsnNode
-import jadx.core.dex.instructions.InsnType
 import jadx.core.dex.instructions.InvokeNode
 import jadx.core.dex.instructions.NewArrayNode
-import jadx.core.dex.instructions.args.*
-import jadx.core.dex.visitors.prepare.CollectConstValues
+import jadx.core.dex.instructions.args.InsnArg
+import jadx.core.dex.instructions.args.InsnWrapArg
+import jadx.core.dex.instructions.args.LiteralArg
+import jadx.core.dex.instructions.args.PrimitiveType
+import jadx.core.dex.instructions.args.RegisterArg
+import jadx.core.dex.nodes.MethodNode
+import jadx.core.utils.InsnUtils
 import java.nio.charset.StandardCharsets
 
-
 val jadx = getJadxInstance()
-val allClasses = jadx.classes
-val fieldsMap = allClasses.flatMap { cls -> cls.fields.map { "${cls.fullName}.${it.getRawName()}" to it } }.toMap()
 
 jadx.replace.insns { mth, insn ->
 	if (insn is InvokeNode) {
 		val mthFullId = insn.callMth.rawFullId
 		if (mthFullId.endsWith("([B[B)Ljava/lang/String;")) {
-			val data = getByteArray(insn.getArg(0))
-			val key = getByteArray(insn.getArg(1))
+			val data = getByteArray(mth, insn.getArg(0))
+			val key = getByteArray(mth, insn.getArg(1))
 			if (data != null && key != null) {
 				val resultStr = stringFogDecrypt(data, key)
-				log.info { "[*] $mthFullId for '${mth.name}': '$resultStr'" }
+				log.info { "[*] $mthFullId in '${mth.name}': '$resultStr'" }
 				return@insns ConstStringNode(resultStr)
 			}
-		}
+		}	
 	}
 	null
 }
 
-private fun getFieldConstValue(fld: FieldInfo): Long? {
-	val fieldKey = "${fld.declClass.fullName}.${fld.name}"
-	val javaField = fieldsMap[fieldKey]
-	return CollectConstValues.getFieldConstValue(javaField?.fieldNode)?.let { (it as? Number)?.toLong() }
-}
-
-private fun resolveConstValueFromArg(singleArg: InsnArg?): Long? {
-	if (singleArg == null) return null
-	return when (singleArg) {
-		is LiteralArg -> singleArg.literal
-		is InsnWrapArg -> {
-			val insn = singleArg.wrapInsn
-			if (insn != null && insn.type == InsnType.SGET && insn is IndexInsnNode) {
-				val fieldInfo = insn.index as? FieldInfo ?: return null
-				return getFieldConstValue(fieldInfo)
-			} else {
-				null
-			}
-		}
-		else -> null
-	}
-}
-
-fun getByteArray(arg: InsnArg): ByteArray? {
+fun getByteArray(mth: MethodNode, arg: InsnArg): ByteArray? {
 	val assignInsn = when (arg) {
 		is InsnWrapArg -> arg.wrapInsn
 		is RegisterArg -> arg.assignInsn
@@ -72,12 +46,11 @@ fun getByteArray(arg: InsnArg): ByteArray? {
 	// Case 1: filled-new-array
 	if (assignInsn is FilledNewArrayNode && assignInsn.elemType.primitiveType == PrimitiveType.BYTE) {
 		val bytes = ByteArray(assignInsn.argsCount)
-		for (i in 0 until assignInsn.argsCount) {
-			val value = resolveConstValueFromArg(assignInsn.getArg(i))
-			if (value != null) {
-				bytes[i] = value.toByte()
-			} else {
-				return null
+		var i = 0
+		assignInsn.arguments.forEach { elem ->
+			val constVal = InsnUtils.getConstValueByArg(mth.root(), elem)
+			if (constVal != null && constVal is LiteralArg) {
+				bytes[i++] = constVal.literal.toByte()
 			}
 		}
 		return bytes
